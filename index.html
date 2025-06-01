@@ -34,6 +34,7 @@
       color: white;
       border: none;
       margin-left: 5px;
+      cursor: pointer;
     }
     .chat-section {
       display: flex;
@@ -58,6 +59,7 @@
       font-size: 20px;
       margin-left: 5px;
     }
+    /* Message canvas styling */
     #messageCanvas {
       margin-top: 20px;
       background: white;
@@ -67,6 +69,24 @@
       min-height: 150px;
       max-height: 250px;
       overflow-y: auto;
+    }
+    /* Styles for chat bubbles */
+    .chat-bubble {
+      padding: 8px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    .self {
+      background-color: #DCF8C6; /* Light green */
+      margin-left: auto;
+      text-align: right;
+    }
+    .other {
+      background-color: #FFF; /* White bubble */
+      margin-right: auto;
+      text-align: left;
     }
   </style>
 </head>
@@ -114,17 +134,17 @@
       }
     });
 
-    // "Send" button event listener for text messages (remains unchanged)
+    // "Send" button event listener for text messages
     document.getElementById('sendBtn').addEventListener('click', () => {
       const msg = document.getElementById('chatInput').value;
       if (msg.trim()) {
         socket.emit('send-message', { id: yourId, text: msg });
-        addToCanvas(`You: ${msg}`);
+        addToCanvas(msg, 'self'); // Show outgoing message from self
         document.getElementById('chatInput').value = '';
       }
     });
 
-    // File input event listener to send files (remains unchanged)
+    // File input event listener to send files
     document.getElementById('fileInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -135,35 +155,54 @@
             filename: file.name,
             content: reader.result
           });
-          addToCanvas(`You sent file: ${file.name}`);
+          addToCanvas(`File sent: ${file.name}`, 'self');
         };
         reader.readAsDataURL(file);
       }
     });
 
-    // Function to add messages to the message canvas
-    function addToCanvas(content) {
+    // Function to add chat messages to the canvas with styling depending on sender
+    function addToCanvas(message, sender = 'other') {
       const canvas = document.getElementById('messageCanvas');
       const msgDiv = document.createElement('div');
-      msgDiv.textContent = content;
+      msgDiv.classList.add('chat-bubble');
+      // Apply classes based on sender type
+      if (sender === 'self') {
+        msgDiv.classList.add('self');
+      } else {
+        msgDiv.classList.add('other');
+      }
+      msgDiv.textContent = message;
       canvas.appendChild(msgDiv);
+      // Scroll to the bottom of the chat canvas
+      canvas.scrollTop = canvas.scrollHeight;
     }
 
-    // Existing Socket.IO event handlers for messaging
+    // Socket.IO event handler for receiving messages
     socket.on('receive-message', (data) => {
-      addToCanvas(`${data.id}: ${data.text}`);
+      // Avoid duplicates: if the message is from self, we may have already displayed it.
+      // For demonstration, we'll display all, but you can add logic to filter self messages.
+      if (data.id !== yourId) {
+        addToCanvas(data.text, 'other');
+      }
     });
 
+    // Socket.IO event handler for receiving files
     socket.on('receive-file', (data) => {
-      addToCanvas(`${data.id} sent file: ${data.filename}`);
+      if (data.id !== yourId) {
+        addToCanvas(`File received: ${data.filename}`, 'other');
+      }
     });
 
-    // New event listener for connection success popup
+    // Event listener for connection success: change the connect button appearance
     socket.on('connection-success', (data) => {
       alert("Connected!");
+      const connectBtn = document.getElementById('connectBtn');
+      connectBtn.style.backgroundColor = "darkgreen";
+      connectBtn.textContent = "Connected";
     });
 
-    // Optionally, event listener for connection failure
+    // Event listener for connection failure (optional)
     socket.on('connection-failure', (data) => {
       alert("Connection failed: " + data.message);
     });
