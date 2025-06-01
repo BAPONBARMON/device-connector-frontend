@@ -1,0 +1,156 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Device Connector</title>
+  <!-- Socket.IO CDN -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+    }
+    .id-section {
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    .id-label {
+      font-weight: bold;
+    }
+    input, button {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+    }
+    #connectBtn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      margin-left: 5px;
+    }
+    .chat-section {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    #chatInput {
+      flex: 1;
+      padding: 10px;
+    }
+    #sendBtn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .file-icon {
+      cursor: pointer;
+      font-size: 20px;
+      margin-left: 5px;
+    }
+    #messageCanvas {
+      margin-top: 20px;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 8px;
+      min-height: 150px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Device ID display section -->
+    <div class="id-section">
+      <span class="id-label">Your ID:</span>
+      <span id="yourId">123456</span>
+    </div>
+
+    <!-- Input to connect to another device via ID -->
+    <input type="text" id="connectToId" placeholder="Connect to ID" />
+    <button id="connectBtn">Connect</button>
+
+    <!-- Message canvas -->
+    <div id="messageCanvas"></div>
+
+    <!-- Chat section (send text and file) -->
+    <div class="chat-section">
+      <input type="file" id="fileInput" hidden />
+      <span class="file-icon" onclick="document.getElementById('fileInput').click()">📎</span>
+      <input type="text" id="chatInput" placeholder="Type a message" />
+      <button id="sendBtn">➤</button>
+    </div>
+  </div>
+
+  <script>
+    // Update the backend URL after deployment
+    const socket = io('https://your-backend-url.com');
+
+    // Generate a unique device ID and display it
+    const yourId = Math.floor(100000 + Math.random() * 900000).toString();
+    document.getElementById('yourId').textContent = yourId;
+
+    // Connect button event listener
+    document.getElementById('connectBtn').addEventListener('click', () => {
+      const targetId = document.getElementById('connectToId').value;
+      if (targetId) socket.emit('connect-to-id', targetId);
+    });
+
+    // Send button event listener for text messages
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      const msg = document.getElementById('chatInput').value;
+      if (msg.trim()) {
+        socket.emit('send-message', { id: yourId, text: msg });
+        addToCanvas(`You: ${msg}`);
+        document.getElementById('chatInput').value = '';
+      }
+    });
+
+    // File input event listener to send files
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          socket.emit('send-file', {
+            id: yourId,
+            filename: file.name,
+            content: reader.result
+          });
+          addToCanvas(`You sent file: ${file.name}`);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Function to add messages to the canvas
+    function addToCanvas(content) {
+      const canvas = document.getElementById('messageCanvas');
+      const msgDiv = document.createElement('div');
+      msgDiv.textContent = content;
+      canvas.appendChild(msgDiv);
+    }
+
+    // Socket.IO event handlers for receiving messages and files
+    socket.on('receive-message', (data) => {
+      addToCanvas(`${data.id}: ${data.text}`);
+    });
+
+    socket.on('receive-file', (data) => {
+      addToCanvas(`${data.id} sent file: ${data.filename}`);
+    });
+  </script>
+</body>
+</html>
