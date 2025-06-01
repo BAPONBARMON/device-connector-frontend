@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Device Connector</title>
-  <!-- Socket.IO CDN for client side -->
+  <!-- Socket.IO CDN -->
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <style>
-    /* Container and overall styling */
+    /* Overall container styling */
     .container {
       max-width: 500px;
       margin: 20px auto;
@@ -19,11 +19,11 @@
     }
     h1 {
       text-align: center;
-      color: #000;
+      color: #000; /* Header text color is now black */
       font-weight: bold;
       margin-bottom: 10px;
-      font-size: 22px;
-      text-decoration: underline;
+      font-size: 22px;      /* Slightly smaller font size */
+      text-decoration: underline; /* Underlined for a stylish look */
     }
     .id-section {
       margin-bottom: 15px;
@@ -34,7 +34,7 @@
     }
     #yourId {
       font-weight: bold;
-      letter-spacing: 2px;
+      letter-spacing: 2px; /* Added spacing between digits */
     }
     input, button {
       padding: 10px;
@@ -43,6 +43,7 @@
       margin-top: 10px;
       font-size: 14px;
     }
+    /* Connect and Disconnect button styling */
     #connectBtn {
       background-color: #007bff;
       color: white;
@@ -54,24 +55,27 @@
       color: white;
       border: none;
       cursor: pointer;
-      display: none;
+      display: none; /* Initially hidden */
       margin-left: 5px;
     }
+    /* Chat container to group messages and input area */
     .chat-container {
       margin-top: 15px;
       background-color: #f1f1f1;
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 10px;
-      min-height: 350px;
+      min-height: 350px; /* Extended height */
       display: flex;
       flex-direction: column;
     }
+    /* Message canvas: scrollable messages area */
     #messageCanvas {
       flex: 1;
       overflow-y: auto;
       padding: 10px;
     }
+    /* Chat section (typing area) inside the chat container */
     .chat-section {
       display: flex;
       align-items: center;
@@ -110,188 +114,155 @@
       font-weight: bold;
     }
     .self {
-      background-color: #DCF8C6;
+      background-color: #DCF8C6; /* Light green for messages sent by self */
       margin-left: auto;
       text-align: right;
     }
     .other {
-      background-color: #F0F0F0;
+      background-color: #F0F0F0; /* Light grey for incoming messages */
       margin-right: auto;
       text-align: left;
-    }
-    /* Progress display styling */
-    #progressDisplay {
-      margin-top: 10px;
-      text-align: center;
-      font-weight: bold;
-      color: #007bff;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Device Connector</h1>
-    <!-- Device ID Section -->
+    <!-- Device ID display section -->
     <div class="id-section">
       <span class="id-label">Your ID:</span>
-      <span id="yourId"></span>
+      <span id="yourId">123456</span>
     </div>
-    <!-- Input for Target Device's 6-Digit Code -->
+
+    <!-- Input to enter the 6-digit code of the target device -->
     <input type="text" id="connectToId" placeholder="Enter 6-digit target code" />
     <button id="connectBtn">Connect</button>
     <button id="disconnectBtn">Disconnect</button>
-    
-    <!-- Chat Container -->
+
+    <!-- Chat container: message canvas and input area included -->
     <div class="chat-container">
+      <!-- Message canvas -->
       <div id="messageCanvas"></div>
+      <!-- Chat section (typing area) -->
       <div class="chat-section">
         <span class="file-icon" onclick="document.getElementById('fileInput').click()">📎</span>
         <input type="text" id="chatInput" placeholder="Type a message" />
         <button id="sendBtn">➤</button>
       </div>
     </div>
-    
-    <!-- File Upload Progress Display -->
-    <div id="progressDisplay"></div>
-    
-    <!-- Hidden File Input -->
+    <!-- File input for attachments (allows any file type, with multiple selection) -->
     <input type="file" id="fileInput" hidden multiple />
   </div>
 
   <script>
-    /* Initialize Socket.IO connection using your Render.com backend URL */
-    const socket = io("https://temp-chat-backend.onrender.com");
-    
-    // Generate and display a unique 6-digit device ID.
+    // Connect to the backend (replace with your Render.com live URL)
+    const socket = io('https://device-connector-backend.onrender.com');
+
+    // Generate a unique 6-digit device code and display it
     const yourId = Math.floor(100000 + Math.random() * 900000).toString();
-    document.getElementById("yourId").textContent = yourId;
-    
-    // Register this device on the server.
-    socket.emit("register-device", { code: yourId });
-    
-    // Connect Button: Validate entered code and send connection request.
-    document.getElementById("connectBtn").addEventListener("click", () => {
-      const targetCode = document.getElementById("connectToId").value.trim();
+    document.getElementById('yourId').textContent = yourId;
+
+    // Register this device with the server using its code
+    socket.emit('register-device', { code: yourId });
+
+    // Connect button event: attempt to connect to a target device using its code
+    document.getElementById('connectBtn').addEventListener('click', () => {
+      const targetCode = document.getElementById('connectToId').value.trim();
+      // Validate that the entered code is exactly 6 digits and numeric
       if (targetCode.length === 6 && !isNaN(targetCode)) {
-        if (targetCode === yourId) {
+        if(targetCode === yourId) {
           alert("You cannot connect to yourself.");
           return;
         }
-        socket.emit("connect-to-code", { fromCode: yourId, targetCode });
+        // Emit event with our device code and target device code
+        socket.emit('connect-to-code', { fromCode: yourId, targetCode });
       } else {
         alert("Please enter a valid 6-digit code.");
       }
     });
-    
-    // Disconnect Button: Disconnect socket and update UI.
-    document.getElementById("disconnectBtn").addEventListener("click", () => {
+
+    // Disconnect button event: disconnect the socket and reset UI
+    document.getElementById('disconnectBtn').addEventListener('click', () => {
       socket.disconnect();
-      document.getElementById("connectBtn").style.backgroundColor = "#007bff";
-      document.getElementById("connectBtn").textContent = "Connect";
-      document.getElementById("disconnectBtn").style.display = "none";
+      document.getElementById('connectBtn').style.backgroundColor = "#007bff";
+      document.getElementById('connectBtn').textContent = "Connect";
+      document.getElementById('disconnectBtn').style.display = "none";
       addToCanvas("You have disconnected.", "self");
     });
-    
-    // Send Text Message: Emit message event and update canvas.
-    document.getElementById("sendBtn").addEventListener("click", () => {
-      const msg = document.getElementById("chatInput").value;
+
+    // Send button event: send a text message
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      const msg = document.getElementById('chatInput').value;
       if (msg.trim()) {
-        socket.emit("send-message", { id: yourId, text: msg });
-        addToCanvas(`You: ${msg}`, "self");
-        document.getElementById("chatInput").value = "";
+        socket.emit('send-message', { id: yourId, text: msg });
+        addToCanvas(`You: ${msg}`, 'self');
+        document.getElementById('chatInput').value = '';
       }
     });
-    
-    // File Input: Read and send selected files with progress tracking.
-    document.getElementById("fileInput").addEventListener("change", (e) => {
+
+    // File input event: send files
+    document.getElementById('fileInput').addEventListener('change', (e) => {
       const files = e.target.files;
       if (files.length) {
         Array.from(files).forEach(file => {
           const reader = new FileReader();
-
-          // Update upload progress
-          reader.onprogress = (event) => {
-            if (event.lengthComputable) {
-              const percent = Math.round((event.loaded / event.total) * 100);
-              document.getElementById("progressDisplay").textContent = "Uploading: " + percent + "%";
-            }
-          };
-
           reader.onload = () => {
-            socket.emit("send-file", {
-              sender: yourId,
+            socket.emit('send-file', {
+              id: yourId,
               filename: file.name,
               content: reader.result
             });
-            addToCanvas(`File Sent: ${file.name}`, "self");
-            document.getElementById("progressDisplay").textContent = "";
+            addToCanvas(`File sent: ${file.name}`, 'self');
           };
-
-          reader.onerror = () => {
-            document.getElementById("progressDisplay").textContent = "Error reading file.";
-          };
-
           reader.readAsDataURL(file);
         });
       }
     });
-    
-    // Helper Function: Add message or file link to the chat canvas.
-    function addToCanvas(content, sender) {
-      const canvas = document.getElementById("messageCanvas");
-      const msgDiv = document.createElement("div");
-      msgDiv.classList.add("chat-bubble");
-      msgDiv.classList.add(sender === "self" ? "self" : "other");
-      
-      if (typeof content === "string") {
-        msgDiv.textContent = content;
-      } else {
-        msgDiv.appendChild(content);
-      }
-      
+
+    // Function to add a message bubble to the canvas with styling
+    function addToCanvas(message, sender = 'other') {
+      const canvas = document.getElementById('messageCanvas');
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('chat-bubble');
+      msgDiv.classList.add(sender === 'self' ? 'self' : 'other');
+      msgDiv.textContent = message;
       canvas.appendChild(msgDiv);
       canvas.scrollTop = canvas.scrollHeight;
     }
-    
-    // Socket Event Listeners
-    
-    // When connection succeeds, show popup on both devices.
-    socket.on("connection-success", (data) => {
-      alert("Connected: " + data.message);
-      document.getElementById("connectBtn").style.backgroundColor = "darkgreen";
-      document.getElementById("connectBtn").textContent = "Connected";
-      document.getElementById("disconnectBtn").style.display = "inline-block";
+
+    // Socket event: on successful connection between devices
+    socket.on('connection-success', (data) => {
+      alert("Connected!");
+      document.getElementById('connectBtn').style.backgroundColor = "darkgreen";
+      document.getElementById('connectBtn').textContent = "Connected";
+      document.getElementById('disconnectBtn').style.display = "inline-block";
     });
-    
-    // On connection failure, show error message.
-    socket.on("connection-failure", (data) => {
+
+    // Socket event: handle connection failure
+    socket.on('connection-failure', (data) => {
       alert("Connection failed: " + data.message);
     });
-    
-    // Receiving text messages from others.
-    socket.on("receive-message", (data) => {
+
+    // Socket event: receiving text messages from others
+    socket.on('receive-message', (data) => {
       if (data.id !== yourId) {
-        addToCanvas(data.text, "other");
+        addToCanvas(data.text, 'other');
       }
     });
-    
-    // Receiving files from others.
-    socket.on("receive-file", (data) => {
-      if (data.sender !== yourId) {
-        const link = document.createElement("a");
-        link.href = data.content;
-        link.download = data.filename;
-        link.textContent = `Download: ${data.filename}`;
-        addToCanvas(link, "other");
+
+    // Socket event: receiving file notifications from others
+    socket.on('receive-file', (data) => {
+      if (data.id !== yourId) {
+        addToCanvas(`File received: ${data.filename}`, 'other');
       }
     });
-    
-    // Handle socket disconnect event.
-    socket.on("disconnect", () => {
-      console.log("Socket disconnected.");
-      document.getElementById("connectBtn").style.backgroundColor = "#007bff";
-      document.getElementById("connectBtn").textContent = "Connect";
-      document.getElementById("disconnectBtn").style.display = "none";
+
+    // Update UI on socket disconnect event
+    socket.on('disconnect', () => {
+      console.log('Socket disconnected.');
+      document.getElementById('connectBtn').style.backgroundColor = "#007bff";
+      document.getElementById('connectBtn').textContent = "Connect";
+      document.getElementById('disconnectBtn').style.display = "none";
     });
   </script>
 </body>
