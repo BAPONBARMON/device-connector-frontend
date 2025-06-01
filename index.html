@@ -78,8 +78,8 @@
       <span id="yourId">123456</span>
     </div>
 
-    <!-- Input to connect to another device via ID -->
-    <input type="text" id="connectToId" placeholder="Connect to ID" />
+    <!-- Input to enter a 6-digit code to connect -->
+    <input type="text" id="connectToId" placeholder="Enter 6-digit code" />
     <button id="connectBtn">Connect</button>
 
     <!-- Message canvas -->
@@ -95,20 +95,26 @@
   </div>
 
   <script>
-    // Updated backend URL using your live Render.com link
+    // Updated backend URL using your Render.com live link
     const socket = io('https://device-connector-backend.onrender.com');
 
     // Generate a unique device ID and display it
     const yourId = Math.floor(100000 + Math.random() * 900000).toString();
     document.getElementById('yourId').textContent = yourId;
 
-    // Connect button event listener
+    // "Connect" button event listener with 6-digit code validation
     document.getElementById('connectBtn').addEventListener('click', () => {
-      const targetId = document.getElementById('connectToId').value;
-      if (targetId) socket.emit('connect-to-id', targetId);
+      const targetCode = document.getElementById('connectToId').value.trim();
+      // Validate that the code is exactly 6 digits and numeric
+      if (targetCode.length === 6 && !isNaN(targetCode)) {
+        // Emit a custom event 'connect-to-code' with yourId and targetCode
+        socket.emit('connect-to-code', { id: yourId, code: targetCode });
+      } else {
+        alert("Please enter a valid 6-digit code.");
+      }
     });
 
-    // Send button event listener for text messages
+    // "Send" button event listener for text messages (remains unchanged)
     document.getElementById('sendBtn').addEventListener('click', () => {
       const msg = document.getElementById('chatInput').value;
       if (msg.trim()) {
@@ -118,7 +124,7 @@
       }
     });
 
-    // File input event listener to send files
+    // File input event listener to send files (remains unchanged)
     document.getElementById('fileInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -135,7 +141,7 @@
       }
     });
 
-    // Function to add messages to the canvas
+    // Function to add messages to the message canvas
     function addToCanvas(content) {
       const canvas = document.getElementById('messageCanvas');
       const msgDiv = document.createElement('div');
@@ -143,13 +149,23 @@
       canvas.appendChild(msgDiv);
     }
 
-    // Socket.IO event handlers for receiving messages and files
+    // Existing Socket.IO event handlers for messaging
     socket.on('receive-message', (data) => {
       addToCanvas(`${data.id}: ${data.text}`);
     });
 
     socket.on('receive-file', (data) => {
       addToCanvas(`${data.id} sent file: ${data.filename}`);
+    });
+
+    // New event listener for connection success popup
+    socket.on('connection-success', (data) => {
+      alert("Connected!");
+    });
+
+    // Optionally, event listener for connection failure
+    socket.on('connection-failure', (data) => {
+      alert("Connection failed: " + data.message);
     });
   </script>
 </body>
