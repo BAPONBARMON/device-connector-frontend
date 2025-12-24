@@ -2,68 +2,136 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Temp Chat</title>
 
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
 <style>
+*{box-sizing:border-box}
+
 body{
+  margin:0;
   font-family:monospace;
   background:#000;
   color:#00ff57;
 }
+
 .container{
-  max-width:500px;
-  margin:20px auto;
+  width:100%;
+  max-width:480px;
+  margin:auto;
+  min-height:100vh;
   border:2px solid #00ff57;
   padding:12px;
+  display:flex;
+  flex-direction:column;
 }
-h1{text-align:center}
+
+h1{
+  text-align:center;
+  margin:6px 0;
+}
+
 .top-status{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  font-size:14px;
 }
+
 .spinner{
   animation:spin 1s linear infinite;
 }
 @keyframes spin{100%{transform:rotate(360deg)}}
+
 .chat{
-  height:280px;
+  flex:1;
   overflow-y:auto;
   border:1px solid #00ff57;
   padding:8px;
-  margin-top:10px;
+  margin:10px 0;
 }
+
 .bubble{
-  max-width:70%;
-  padding:6px;
+  max-width:75%;
+  padding:8px;
   margin:6px 0;
-  border-radius:8px;
+  border-radius:10px;
+  word-wrap:break-word;
 }
+
 .self{
   background:#003300;
   margin-left:auto;
   text-align:right;
 }
+
 .other{
   background:#111;
 }
+
 .controls{
   display:flex;
-  gap:5px;
-  margin-top:8px;
+  gap:6px;
+  margin:6px 0;
 }
+
+.controls input{flex:1}
+
 input,button{
+  padding:10px;
+  font-size:14px;
   background:#000;
   color:#00ff57;
   border:1px solid #00ff57;
-  padding:6px;
+  border-radius:6px;
+}
+
+button{cursor:pointer}
+button:active{opacity:0.7}
+
+/* 🔐 Hacking popup */
+.popup-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+
+.popup-box{
+  background:#000;
+  border:2px solid #00ff57;
+  color:#00ff57;
+  padding:20px;
+  width:90%;
+  max-width:320px;
+  text-align:center;
+  border-radius:8px;
+  box-shadow:0 0 18px #00ff57;
+}
+
+.popup-box button{
+  margin-top:14px;
+  padding:8px 18px;
+  background:#000;
+  color:#00ff57;
+  border:1px solid #00ff57;
+  border-radius:5px;
+}
+
+@media(max-width:480px){
+  h1{font-size:18px}
+  input,button{font-size:13px;padding:9px}
 }
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
 <h1>Temp Chat</h1>
@@ -82,15 +150,23 @@ input,button{
 </div>
 
 <div class="controls">
-  <input id="connectToId" placeholder="Enter 4-digit code">
+  <input
+    id="connectToId"
+    placeholder="Enter 4-digit code"
+    inputmode="numeric"
+    maxlength="4"
+  />
   <button id="connectBtn">Connect</button>
-  <button id="disconnectBtn" style="display:none">Disconnect</button>
+</div>
+
+<div class="controls">
+  <button id="disconnectBtn" style="display:none;width:100%">Disconnect</button>
 </div>
 
 <div class="chat" id="messageCanvas"></div>
 
 <div class="controls">
-  <span onclick="fileInput.click()">📎</span>
+  <span onclick="fileInput.click()" style="font-size:20px">📎</span>
   <input id="chatInput" placeholder="Type message">
   <button id="sendBtn">Send</button>
 </div>
@@ -99,73 +175,99 @@ input,button{
 
 </div>
 
+<!-- 🔐 Popup -->
+<div class="popup-overlay" id="popup">
+  <div class="popup-box">
+    <div id="popupMsg"></div>
+    <button onclick="closePopup()">OK</button>
+  </div>
+</div>
+
 <script>
 const socket = io("https://device-connector-backend.onrender.com");
 
-const yourId = Math.floor(1000 + Math.random() * 9000).toString();
-document.getElementById("yourId").textContent = yourId;
+const yourId = Math.floor(1000 + Math.random()*9000).toString();
+document.getElementById("yourId").innerText = yourId;
 
-let seconds = 0;
-let timerInt = null;
+let seconds=0, timerInt=null;
 
-socket.on("connect", () => {
-  document.getElementById("serverStatus").innerHTML = "✅ Server Connected";
-  socket.emit("register-device", { code: yourId });
+socket.on("connect",()=>{
+  serverStatus.innerHTML="✅ Server Connected";
+  socket.emit("register-device",{code:yourId});
 });
 
-// timer
 function startTimer(){
-  timerInt = setInterval(() => {
+  timerInt=setInterval(()=>{
     seconds++;
-    const m = String(Math.floor(seconds/60)).padStart(2,"0");
-    const s = String(seconds%60).padStart(2,"0");
-    document.getElementById("timer").textContent = m+":"+s;
+    const m=String(Math.floor(seconds/60)).padStart(2,"0");
+    const s=String(seconds%60).padStart(2,"0");
+    timer.innerText=`${m}:${s}`;
   },1000);
 }
 
-document.getElementById("connectBtn").onclick = () => {
-  const target = document.getElementById("connectToId").value;
-  socket.emit("connect-to-code", { fromCode: yourId, targetCode: target });
+/* 🔢 validation + popup */
+connectBtn.onclick=()=>{
+  const code=connectToId.value.trim();
+
+  if(!/^\d+$/.test(code)){
+    showPopup("ONLY NUMBERS ALLOWED");
+    return;
+  }
+  if(code.length!==4){
+    showPopup("PLEASE ENTER VALID 4 DIGIT NUMBER");
+    return;
+  }
+
+  socket.emit("connect-to-code",{fromCode:yourId,targetCode:code});
 };
 
-document.getElementById("disconnectBtn").onclick = () => {
-  location.reload();
-};
+disconnectBtn.onclick=()=>location.reload();
 
-document.getElementById("sendBtn").onclick = () => {
-  const msg = chatInput.value;
-  if (!msg) return;
-  socket.emit("send-message", { text: msg });
+sendBtn.onclick=()=>{
+  const msg=chatInput.value.trim();
+  if(!msg) return;
+  socket.emit("send-message",{text:msg});
   addBubble(msg,"self");
   chatInput.value="";
 };
 
-fileInput.onchange = (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-  const r = new FileReader();
-  r.onload = () => {
-    socket.emit("send-file", { name:f.name, data:r.result });
+fileInput.onchange=e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    socket.emit("send-file",{name:f.name,data:r.result});
     addBubble("📎 "+f.name,"self");
   };
   r.readAsDataURL(f);
 };
 
-socket.on("receive-message", d => addBubble(d.text,"other"));
-socket.on("receive-file", d => addBubble("📎 "+d.name,"other"));
+socket.on("receive-message",d=>addBubble(d.text,"other"));
+socket.on("receive-file",d=>addBubble("📎 "+d.name,"other"));
 
-socket.on("connection-success", () => {
+socket.on("connection-success",()=>{
   startTimer();
-  document.getElementById("disconnectBtn").style.display="inline-block";
+  disconnectBtn.style.display="block";
 });
+
+/* popup functions */
+function showPopup(msg){
+  popupMsg.innerText=msg;
+  popup.style.display="flex";
+}
+function closePopup(){
+  popup.style.display="none";
+  connectToId.focus();
+}
 
 function addBubble(text,type){
   const div=document.createElement("div");
   div.className="bubble "+type;
-  div.textContent=text;
+  div.innerText=text;
   messageCanvas.appendChild(div);
   messageCanvas.scrollTop=messageCanvas.scrollHeight;
 }
 </script>
+
 </body>
 </html>
