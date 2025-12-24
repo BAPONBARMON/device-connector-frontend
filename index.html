@@ -45,13 +45,18 @@ h1{
 }
 @keyframes spin{100%{transform:rotate(360deg)}}
 
+/* --------- IMPORTANT CHANGE --------- */
+/* Chat area height reduced by ~30% from full screen */
 .chat{
-  flex:1;
+  /* flex:1 removed to avoid taking all remaining space */
+  /* Instead use fixed max-height relative to viewport */
+  max-height:62vh;    /* Around 62% of viewport height */
   overflow-y:auto;
   border:1px solid #00ff57;
   padding:8px;
   margin:10px 0;
 }
+/* ------------------------------------ */
 
 .bubble{
   max-width:75%;
