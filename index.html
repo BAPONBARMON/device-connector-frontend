@@ -1,35 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Temp Chat</title>
+
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
 <style>
 body{
-  background:black;
-  color:#00ff57;
   font-family:monospace;
+  background:#000;
+  color:#00ff57;
 }
 .container{
-  max-width:480px;
+  max-width:500px;
   margin:20px auto;
-  border:1px solid #00ff57;
-  padding:10px;
+  border:2px solid #00ff57;
+  padding:12px;
 }
-.top{
+h1{text-align:center}
+.top-status{
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
-.spinner{animation:spin 1s linear infinite;}
+.spinner{
+  animation:spin 1s linear infinite;
+}
 @keyframes spin{100%{transform:rotate(360deg)}}
 .chat{
-  height:300px;
+  height:280px;
   overflow-y:auto;
   border:1px solid #00ff57;
   padding:8px;
-  margin:10px 0;
+  margin-top:10px;
 }
 .bubble{
   max-width:70%;
@@ -38,127 +42,129 @@ body{
   border-radius:8px;
 }
 .self{
-  margin-left:auto;
   background:#003300;
+  margin-left:auto;
   text-align:right;
 }
 .other{
-  margin-right:auto;
   background:#111;
 }
 .controls{
   display:flex;
   gap:5px;
+  margin-top:8px;
 }
 input,button{
-  background:black;
+  background:#000;
   color:#00ff57;
   border:1px solid #00ff57;
   padding:6px;
 }
-#typing{font-size:12px;}
-.hidden{display:none}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<div class="top">
-  <div id="serverStatus"><span class="spinner">🔄</span> Connecting</div>
+<h1>Temp Chat</h1>
+
+<div class="top-status">
+  <div id="serverStatus">
+    <span class="spinner">🔄</span> Connecting…
+  </div>
   <div id="timer">00:00</div>
 </div>
 
 <hr>
 
-<div>Your Code: <b id="myCode"></b></div>
+<div>
+  Your Code: <b id="yourId"></b>
+</div>
 
 <div class="controls">
-  <input id="targetCode" placeholder="4 digit code">
+  <input id="connectToId" placeholder="Enter 4-digit code">
   <button id="connectBtn">Connect</button>
-  <button id="disconnectBtn" class="hidden">Disconnect</button>
+  <button id="disconnectBtn" style="display:none">Disconnect</button>
 </div>
 
-<div id="typing"></div>
-
-<div class="chat" id="chat"></div>
+<div class="chat" id="messageCanvas"></div>
 
 <div class="controls">
-  <span onclick="file.click()">📎</span>
-  <input id="msg" placeholder="Message">
-  <button id="send">Send</button>
+  <span onclick="fileInput.click()">📎</span>
+  <input id="chatInput" placeholder="Type message">
+  <button id="sendBtn">Send</button>
 </div>
 
-<input type="file" id="file" hidden>
+<input type="file" id="fileInput" hidden>
 
 </div>
 
 <script>
 const socket = io("https://device-connector-backend.onrender.com");
 
-const myCode = Math.floor(1000 + Math.random()*9000);
-myCodeEl.textContent = myCode;
+const yourId = Math.floor(1000 + Math.random() * 9000).toString();
+document.getElementById("yourId").textContent = yourId;
 
-let sec=0,timer=null;
+let seconds = 0;
+let timerInt = null;
 
-socket.on("connect",()=>{
-  serverStatus.innerHTML="✅ Server Connected";
-  socket.emit("register-device",{code:myCode});
+socket.on("connect", () => {
+  document.getElementById("serverStatus").innerHTML = "✅ Server Connected";
+  socket.emit("register-device", { code: yourId });
 });
 
+// timer
 function startTimer(){
-  timer=setInterval(()=>{
-    sec++;
-    timerEl.innerText=
-      String(Math.floor(sec/60)).padStart(2,"0")+":"+
-      String(sec%60).padStart(2,"0");
+  timerInt = setInterval(() => {
+    seconds++;
+    const m = String(Math.floor(seconds/60)).padStart(2,"0");
+    const s = String(seconds%60).padStart(2,"0");
+    document.getElementById("timer").textContent = m+":"+s;
   },1000);
 }
 
-connectBtn.onclick=()=>{
-  socket.emit("connect-to-code",{fromCode:myCode,targetCode:targetCode.value});
+document.getElementById("connectBtn").onclick = () => {
+  const target = document.getElementById("connectToId").value;
+  socket.emit("connect-to-code", { fromCode: yourId, targetCode: target });
 };
 
-disconnectBtn.onclick=()=>{
+document.getElementById("disconnectBtn").onclick = () => {
   location.reload();
 };
 
-socket.on("connection-success",()=>{
-  startTimer();
-  disconnectBtn.classList.remove("hidden");
-});
-
-send.onclick=()=>{
-  if(!msg.value)return;
-  socket.emit("send-message",{text:msg.value});
-  add(msg.value,"self");
-  msg.value="";
+document.getElementById("sendBtn").onclick = () => {
+  const msg = chatInput.value;
+  if (!msg) return;
+  socket.emit("send-message", { text: msg });
+  addBubble(msg,"self");
+  chatInput.value="";
 };
 
-socket.on("receive-message",(d)=>add(d.text,"other"));
-
-msg.oninput=()=>socket.emit("typing",true);
-socket.on("typing",s=>typing.innerText=s?"Typing...":"");
-
-file.onchange=e=>{
-  const f=e.target.files[0];
-  if(!f)return;
-  const r=new FileReader();
-  r.onload=()=>{
-    socket.emit("send-file",{name:f.name,data:r.result});
-    add("📎 "+f.name,"self");
+fileInput.onchange = (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    socket.emit("send-file", { name:f.name, data:r.result });
+    addBubble("📎 "+f.name,"self");
   };
   r.readAsDataURL(f);
 };
 
-socket.on("receive-file",d=>add("📎 "+d.name,"other"));
+socket.on("receive-message", d => addBubble(d.text,"other"));
+socket.on("receive-file", d => addBubble("📎 "+d.name,"other"));
 
-function add(text,type){
-  const d=document.createElement("div");
-  d.className="bubble "+type;
-  d.innerText=text;
-  chat.appendChild(d);
-  chat.scrollTop=chat.scrollHeight;
+socket.on("connection-success", () => {
+  startTimer();
+  document.getElementById("disconnectBtn").style.display="inline-block";
+});
+
+function addBubble(text,type){
+  const div=document.createElement("div");
+  div.className="bubble "+type;
+  div.textContent=text;
+  messageCanvas.appendChild(div);
+  messageCanvas.scrollTop=messageCanvas.scrollHeight;
 }
 </script>
 </body>
