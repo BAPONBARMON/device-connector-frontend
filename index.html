@@ -22,7 +22,7 @@ body{
   width:100%;
   max-width:480px;
   margin:auto;
-  height:70vh;
+  height:65vh;
   border:2px solid #00ff57;
   padding:10px;
   display:flex;
@@ -33,26 +33,57 @@ body{
 h1{
   text-align:center;
   margin:4px 0;
-  font-size:22px;
+  font-size:18px;
 }
 
+/* STATUS */
 .top-status{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  font-size:15px;
-  margin-bottom:10px;
+  font-size:13px;
+  margin-bottom:8px;   /* 👈 gap added */
+}
+
+.status-left{
+  display:flex;
+  align-items:center;
+  gap:6px;
 }
 
 /* SPINNER */
 .spinner{
-  animation:spin 1s linear infinite;
+  width:14px;
+  height:14px;
+  border:2px solid #003300;
+  border-top:2px solid #00ff57;
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
 }
 @keyframes spin{100%{transform:rotate(360deg)}}
 
+/* GREEN TICK */
+.tick-circle{
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#00ff57;
+  color:#000;
+  font-size:11px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* YOUR CODE */
+.your-code{
+  margin-top:10px;     /* 👈 spacing fix */
+  margin-bottom:6px;
+}
+
 /* CHAT BOX */
 .chat{
-  flex:0 0 36vh;              /* controlled height */
+  flex:0 0 36vh;
   overflow-y:auto;
   border:1px solid #00ff57;
   padding:6px;
@@ -61,11 +92,10 @@ h1{
 
 /* CHAT BUBBLES */
 .bubble{
-  max-width:90%;
-  padding:6px;
+  max-width:75%;
+  padding:6px 10px;
   margin:4px 0;
-  border-radius:8px;
-  word-wrap:break-word;
+  border-radius:16px;
   font-size:13px;
 }
 
@@ -79,25 +109,45 @@ h1{
   background:#111;
 }
 
-/* TOP INPUT CONTROLS */
+/* TOP CONTROLS */
 .controls{
   display:flex;
   gap:6px;
   margin:4px 0;
 }
 
-.controls input{
-  flex:1;
-}
+.controls input{flex:1}
 
-/* GENERAL INPUT + BUTTON (COMPACT) */
+/* GENERAL INPUT + BUTTON */
 input,button{
-  padding: 5px 5px;          /* 👈 slim height */
-  font-size:12px;
+  padding:6px 10px;
+  font-size:13px;
   background:#000;
   color:#00ff57;
   border:1px solid #00ff57;
-  border-radius:6px;
+  border-radius:20px;   /* 👈 round shape */
+}
+
+/* BOTTOM BAR */
+.bottom-bar{
+  display:flex;
+  gap:6px;
+  margin-top:4px;
+  align-items:center;
+}
+
+/* BIGGER TEXT INPUT */
+.bottom-bar input{
+  height:40px;          /* 👈 bigger typing box */
+  border-radius:20px;
+  flex:1;
+}
+
+/* ROUND SEND BUTTON */
+.bottom-bar button{
+  height:40px;
+  padding:0 16px;
+  border-radius:20px;
 }
 
 button{
@@ -105,24 +155,6 @@ button{
 }
 button:active{
   opacity:0.7;
-}
-
-/* BOTTOM BAR – EXTRA SLIM & COOL */
-.bottom-bar{
-  display:flex;
-  gap:10px;
-  margin-top:10px;
-  align-items:center;
-}
-
-.bottom-bar input{
-  height:32px;              /* 👈 fixed slim height */
-}
-
-.bottom-bar button{
-  height:32px;
-  padding:0 35px;
-  font-size:12px;
 }
 
 /* POPUP */
@@ -142,20 +174,16 @@ button:active{
   color:#00ff57;
   padding:18px;
   width:90%;
-  max-width:300px;
+  max-width:280px;
   text-align:center;
-  border-radius:8px;
+  border-radius:10px;
   box-shadow:0 0 16px #00ff57;
 }
 
 .popup-box button{
   margin-top:12px;
-  padding:6px 14px;
-  font-size:12px;
-  background:#000;
-  color:#00ff57;
-  border:1px solid #00ff57;
-  border-radius:5px;
+  padding:6px 18px;
+  border-radius:20px;
 }
 </style>
 </head>
@@ -167,21 +195,19 @@ button:active{
 <h1>Temp Chat</h1>
 
 <div class="top-status">
-  <div id="serverStatus">
-    <span class="spinner">🔄</span> Connecting…
+  <div class="status-left" id="serverStatus">
+    <div class="spinner"></div>
+    <span>Connecting...</span>
   </div>
   <div id="timer">00:00</div>
 </div>
 
-<div>Your Code: <b id="yourId"></b></div>
+<div class="your-code">
+  Your Code: <b id="yourId"></b>
+</div>
 
 <div class="controls">
-  <input
-    id="connectToId"
-    placeholder="Enter 4-digit code"
-    inputmode="numeric"
-    maxlength="4"
-  />
+  <input id="connectToId" placeholder="Enter 4-digit code" inputmode="numeric" maxlength="4" />
   <button id="connectBtn">Connect</button>
 </div>
 
@@ -189,12 +215,11 @@ button:active{
   <button id="disconnectBtn" style="display:none;width:100%">Disconnect</button>
 </div>
 
-<!-- CHAT AREA -->
 <div class="chat" id="messageCanvas"></div>
 
-<!-- BOTTOM SEND BAR -->
+<!-- BOTTOM BAR -->
 <div class="bottom-bar">
-  <span onclick="fileInput.click()" style="font-size:16px;cursor:pointer">📎</span>
+  <span onclick="fileInput.click()" style="font-size:18px;cursor:pointer">📎</span>
   <input id="chatInput" placeholder="Type message">
   <button id="sendBtn">Send</button>
 </div>
@@ -220,37 +245,45 @@ document.getElementById("yourId").innerText = yourId;
 let seconds = 0;
 let timerInt = null;
 
+/* SERVER CONNECT */
 socket.on("connect",()=>{
-  serverStatus.innerHTML="✅ Server Connected";
+  serverStatus.innerHTML = `
+    <div class="tick-circle">✓</div>
+    <span>Server Connected</span>
+  `;
   socket.emit("register-device",{code:yourId});
 });
 
+/* TIMER */
 function startTimer(){
   timerInt=setInterval(()=>{
     seconds++;
-    const m=String(Math.floor(seconds/60)).padStart(2,"0");
-    const s=String(seconds%60).padStart(2,"0");
-    timer.innerText=`${m}:${s}`;
+    timer.innerText=
+      String(Math.floor(seconds/60)).padStart(2,"0")+":"+
+      String(seconds%60).padStart(2,"0");
   },1000);
 }
 
-/* CONNECT VALIDATION */
+/* CONNECT */
 connectBtn.onclick=()=>{
   const code=connectToId.value.trim();
-  if(!/^\d+$/.test(code)){
-    showPopup("ONLY NUMBERS ALLOWED");
-    return;
-  }
-  if(code.length!==4){
-    showPopup("PLEASE ENTER VALID 4 DIGIT NUMBER");
+  if(!/^\d+$/.test(code) || code.length!==4){
+    showPopup("INVALID 4 DIGIT CODE");
     return;
   }
   socket.emit("connect-to-code",{fromCode:yourId,targetCode:code});
 };
 
-disconnectBtn.onclick=()=>location.reload();
+socket.on("connection-failure",d=>{
+  showPopup(d?.message || "INVALID CODE / USER NOT AVAILABLE");
+});
 
-/* SEND MESSAGE */
+socket.on("connection-success",()=>{
+  startTimer();
+  disconnectBtn.style.display="block";
+});
+
+/* CHAT */
 sendBtn.onclick=()=>{
   const msg=chatInput.value.trim();
   if(!msg) return;
@@ -259,37 +292,19 @@ sendBtn.onclick=()=>{
   chatInput.value="";
 };
 
-/* FILE */
-fileInput.onchange=e=>{
-  const f=e.target.files[0];
-  if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{
-    socket.emit("send-file",{name:f.name,data:r.result});
-    addBubble("📎 "+f.name,"self");
-  };
-  r.readAsDataURL(f);
-};
-
 socket.on("receive-message",d=>addBubble(d.text,"other"));
-socket.on("receive-file",d=>addBubble("📎 "+d.name,"other"));
-
-socket.on("connection-success",()=>{
-  startTimer();
-  disconnectBtn.style.display="block";
-});
 
 /* POPUP */
 function showPopup(msg){
-  popupMsg.innerText=msg;
-  popup.style.display="flex";
+  popupMsg.innerText = msg;
+  popup.style.display = "flex";
 }
 function closePopup(){
-  popup.style.display="none";
+  popup.style.display = "none";
   connectToId.focus();
 }
 
-/* CHAT BUBBLE */
+/* BUBBLE */
 function addBubble(text,type){
   const div=document.createElement("div");
   div.className="bubble "+type;
