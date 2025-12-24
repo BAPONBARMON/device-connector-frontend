@@ -17,14 +17,14 @@ body{
   color:#00ff57;
 }
 
-/* MAIN WRAPPER */
+/* MAIN CONTAINER */
 .container{
   width:100%;
   max-width:480px;
   margin:auto;
-  height:100vh;
+  height:70vh;
   border:2px solid #00ff57;
-  padding:12px;
+  padding:10px;
   display:flex;
   flex-direction:column;
 }
@@ -32,40 +32,41 @@ body{
 /* HEADER */
 h1{
   text-align:center;
-  margin:6px 0;
+  margin:4px 0;
+  font-size:22px;
 }
 
 .top-status{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  font-size:14px;
+  font-size:15px;
+  margin-bottom:10px;
 }
 
 /* SPINNER */
 .spinner{
   animation:spin 1s linear infinite;
 }
-@keyframes spin{
-  100%{transform:rotate(360deg)}
-}
+@keyframes spin{100%{transform:rotate(360deg)}}
 
-/* CHAT AREA (FLEXIBLE MIDDLE) */
+/* CHAT BOX */
 .chat{
-  flex:1;
+  flex:0 0 36vh;              /* controlled height */
   overflow-y:auto;
   border:1px solid #00ff57;
-  padding:8px;
-  margin:10px 0;
+  padding:6px;
+  margin:6px 0;
 }
 
 /* CHAT BUBBLES */
 .bubble{
-  max-width:75%;
-  padding:8px;
-  margin:6px 0;
-  border-radius:10px;
+  max-width:90%;
+  padding:6px;
+  margin:4px 0;
+  border-radius:8px;
   word-wrap:break-word;
+  font-size:13px;
 }
 
 .self{
@@ -78,20 +79,21 @@ h1{
   background:#111;
 }
 
-/* INPUT SECTIONS */
+/* TOP INPUT CONTROLS */
 .controls{
   display:flex;
   gap:6px;
-  margin:6px 0;
+  margin:4px 0;
 }
 
 .controls input{
   flex:1;
 }
 
+/* GENERAL INPUT + BUTTON (COMPACT) */
 input,button{
-  padding:10px;
-  font-size:14px;
+  padding: 5px 5px;          /* 👈 slim height */
+  font-size:12px;
   background:#000;
   color:#00ff57;
   border:1px solid #00ff57;
@@ -105,11 +107,22 @@ button:active{
   opacity:0.7;
 }
 
-/* BOTTOM BAR (ALWAYS VISIBLE) */
+/* BOTTOM BAR – EXTRA SLIM & COOL */
 .bottom-bar{
   display:flex;
-  gap:6px;
-  margin-top:6px;
+  gap:10px;
+  margin-top:10px;
+  align-items:center;
+}
+
+.bottom-bar input{
+  height:32px;              /* 👈 fixed slim height */
+}
+
+.bottom-bar button{
+  height:32px;
+  padding:0 35px;
+  font-size:12px;
 }
 
 /* POPUP */
@@ -127,26 +140,22 @@ button:active{
   background:#000;
   border:2px solid #00ff57;
   color:#00ff57;
-  padding:20px;
+  padding:18px;
   width:90%;
-  max-width:320px;
+  max-width:300px;
   text-align:center;
   border-radius:8px;
-  box-shadow:0 0 18px #00ff57;
+  box-shadow:0 0 16px #00ff57;
 }
 
 .popup-box button{
-  margin-top:14px;
-  padding:8px 18px;
+  margin-top:12px;
+  padding:6px 14px;
+  font-size:12px;
   background:#000;
   color:#00ff57;
   border:1px solid #00ff57;
   border-radius:5px;
-}
-
-@media(max-width:480px){
-  h1{font-size:18px}
-  input,button{font-size:13px;padding:9px}
 }
 </style>
 </head>
@@ -164,11 +173,7 @@ button:active{
   <div id="timer">00:00</div>
 </div>
 
-<hr>
-
-<div>
-  Your Code: <b id="yourId"></b>
-</div>
+<div>Your Code: <b id="yourId"></b></div>
 
 <div class="controls">
   <input
@@ -187,9 +192,9 @@ button:active{
 <!-- CHAT AREA -->
 <div class="chat" id="messageCanvas"></div>
 
-<!-- BOTTOM BAR -->
+<!-- BOTTOM SEND BAR -->
 <div class="bottom-bar">
-  <span onclick="fileInput.click()" style="font-size:20px">📎</span>
+  <span onclick="fileInput.click()" style="font-size:16px;cursor:pointer">📎</span>
   <input id="chatInput" placeholder="Type message">
   <button id="sendBtn">Send</button>
 </div>
@@ -216,40 +221,38 @@ let seconds = 0;
 let timerInt = null;
 
 socket.on("connect",()=>{
-  serverStatus.innerHTML = "✅ Server Connected";
+  serverStatus.innerHTML="✅ Server Connected";
   socket.emit("register-device",{code:yourId});
 });
 
 function startTimer(){
-  timerInt = setInterval(()=>{
+  timerInt=setInterval(()=>{
     seconds++;
-    const m = String(Math.floor(seconds/60)).padStart(2,"0");
-    const s = String(seconds%60).padStart(2,"0");
-    timer.innerText = `${m}:${s}`;
+    const m=String(Math.floor(seconds/60)).padStart(2,"0");
+    const s=String(seconds%60).padStart(2,"0");
+    timer.innerText=`${m}:${s}`;
   },1000);
 }
 
 /* CONNECT VALIDATION */
-connectBtn.onclick = ()=>{
-  const code = connectToId.value.trim();
-
+connectBtn.onclick=()=>{
+  const code=connectToId.value.trim();
   if(!/^\d+$/.test(code)){
     showPopup("ONLY NUMBERS ALLOWED");
     return;
   }
-  if(code.length !== 4){
+  if(code.length!==4){
     showPopup("PLEASE ENTER VALID 4 DIGIT NUMBER");
     return;
   }
-
   socket.emit("connect-to-code",{fromCode:yourId,targetCode:code});
 };
 
-disconnectBtn.onclick = ()=>location.reload();
+disconnectBtn.onclick=()=>location.reload();
 
 /* SEND MESSAGE */
-sendBtn.onclick = ()=>{
-  const msg = chatInput.value.trim();
+sendBtn.onclick=()=>{
+  const msg=chatInput.value.trim();
   if(!msg) return;
   socket.emit("send-message",{text:msg});
   addBubble(msg,"self");
@@ -257,11 +260,11 @@ sendBtn.onclick = ()=>{
 };
 
 /* FILE */
-fileInput.onchange = e=>{
-  const f = e.target.files[0];
+fileInput.onchange=e=>{
+  const f=e.target.files[0];
   if(!f) return;
-  const r = new FileReader();
-  r.onload = ()=>{
+  const r=new FileReader();
+  r.onload=()=>{
     socket.emit("send-file",{name:f.name,data:r.result});
     addBubble("📎 "+f.name,"self");
   };
@@ -278,21 +281,21 @@ socket.on("connection-success",()=>{
 
 /* POPUP */
 function showPopup(msg){
-  popupMsg.innerText = msg;
-  popup.style.display = "flex";
+  popupMsg.innerText=msg;
+  popup.style.display="flex";
 }
 function closePopup(){
-  popup.style.display = "none";
+  popup.style.display="none";
   connectToId.focus();
 }
 
 /* CHAT BUBBLE */
 function addBubble(text,type){
-  const div = document.createElement("div");
-  div.className = "bubble "+type;
-  div.innerText = text;
+  const div=document.createElement("div");
+  div.className="bubble "+type;
+  div.innerText=text;
   messageCanvas.appendChild(div);
-  messageCanvas.scrollTop = messageCanvas.scrollHeight;
+  messageCanvas.scrollTop=messageCanvas.scrollHeight;
 }
 </script>
 
