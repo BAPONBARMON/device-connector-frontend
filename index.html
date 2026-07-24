@@ -21,7 +21,7 @@ body{
   width:100%;
   max-width:480px;
   margin:auto;
-  height:65vh;
+  height:95vh; /* ৬vh-ৰ পৰা ৯৫vh-লৈ সলনি কৰা হৈছে যাতে অভাৰলেপ নহয় */
   border:2px solid #00ff57;
   padding:10px;
   display:flex;
@@ -76,7 +76,7 @@ h1{
 }
 
 .chat{
-  flex:0 0 36vh;
+  flex:1; /* flex:0 0 36vh-ৰ পৰা flex:1 কৰা হৈছে যাতে বাকী থকা খালি ঠাইখিনিত নিজাববীয়াকৈ এডজাষ্ট হৈ যায় */
   overflow-y:auto;
   border:1px solid #00ff57;
   padding:6px;
@@ -150,13 +150,13 @@ input,button{
   height:14px;
 }
 
-  .title{
+.title{
   text-align:center;
   font-size:18px;
   margin:4px 0 6px;
   padding-bottom:4px;
   border-bottom:1px solid #00ff57;   /* hacking green underline */
-  }
+}
 </style>
 </head>
 
@@ -315,3 +315,4 @@ function addBubble(text,type,id,showTick){
 
 </body>
 </html>
+
